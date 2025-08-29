@@ -217,7 +217,7 @@ def update_html(upside_prob, vol_amp_prob):
     # 更新图片容器部分
     content = re.sub(
         r'(<div class="container-list">).*?(</div>)',
-        lambda m: f'{m.group(1)}\n{chart_containers_html}{m.group(2)}',
+        lambda m: f'{m.group(1)}{chart_containers_html}{m.group(2)}',
         content,
         flags=re.DOTALL
     )
