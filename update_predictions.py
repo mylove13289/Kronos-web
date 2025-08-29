@@ -23,7 +23,7 @@ from model import KronosTokenizer, Kronos, KronosPredictor
 Config = {
     "REPO_PATH": Path(__file__).parent.resolve(),
     "MODEL_PATH_local": "/Users/longquan/Documents/git/py/",
-    "MODEL_PATH": "/home/admin/software/",
+    "MODEL_PATH": "/Users/longquan/Documents/git/py/",
     "SYMBOL": 'x',
     "INTERVAL": 'x',
     "HIST_POINTS": 360,
@@ -276,12 +276,12 @@ def run_scheduler(model, symbol, interval):
     """A continuous scheduler that runs the main task hourly."""
     while True:
         now = datetime.now()
-        next_run_time = (now + timedelta(minutes=10))
+        next_run_time = (now + timedelta(minutes=1))
 
         print(f"Current time: {now:%Y-%m-%d %H:%M:%S}.")
-        print(f"Next run at: {next_run_time:%Y-%m-%d %H:%M:%S}. Waiting for {600:.0f} seconds...")
+        print(f"Next run at: {next_run_time:%Y-%m-%d %H:%M:%S}. Waiting for {60:.0f} seconds...")
 
-        time.sleep(600)
+        time.sleep(60)
 
         try:
             main_task(model, symbol, interval)
@@ -292,7 +292,7 @@ def run_scheduler(model, symbol, interval):
             traceback.print_exc()
             print("Retrying in 5 minutes...")
             print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
-            time.sleep(300)
+            time.sleep(60)
 
 
 
