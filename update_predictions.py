@@ -12,6 +12,7 @@ import pandas as pd
 import torch
 from binance.client import Client
 import argparse
+from bs4 import BeautifulSoup
 
 from model import KronosTokenizer, Kronos, KronosPredictor
 
@@ -172,7 +173,7 @@ def create_plot(hist_df, close_preds_df, volume_preds_df):
     print(f"Chart saved to: {chart_path}")
 
 
-def update_html(upside_prob, vol_amp_prob):
+def _bak_update_html(upside_prob, vol_amp_prob):
     """
     Updates the btc_index.html file with the latest metrics and timestamp.
     This version uses a more robust lambda function for replacement to avoid formatting errors.
@@ -227,6 +228,65 @@ def update_html(upside_prob, vol_amp_prob):
         f.write(content)
     print("HTML file updated successfully.")
 
+
+from bs4 import BeautifulSoup
+
+
+def update_html(upside_prob, vol_amp_prob):
+    """
+    Updates the btc_index.html file with the latest metrics and timestamp.
+    Uses BeautifulSoup to parse and modify HTML.
+    """
+    print("Updating btc_index.html...")
+    html_path = Config["REPO_PATH"] / 'btc_index.html'
+    now_beijing = datetime.now(timezone.utc) + timedelta(hours=8)
+    now_utc_str = now_beijing.strftime('%Y-%m-%d %H:%M:%S')
+    upside_prob_str = f'{upside_prob:.1%}'
+    vol_amp_prob_str = f'{vol_amp_prob:.1%}'
+
+    # 获取图片列表并按名称倒序排列
+    img_dir = Config["REPO_PATH"] / 'img/btc'
+    img_files = sorted(img_dir.glob('btc_prediction_chart_*.png'), reverse=True)
+
+    # 读取HTML文件
+    with open(html_path, 'r', encoding='utf-8') as f:
+        soup = BeautifulSoup(f, 'html.parser')
+
+    # 更新时间戳
+    update_time_element = soup.find('strong', id='update-time')
+    if update_time_element:
+        update_time_element.string = now_utc_str
+
+    # 更新上涨概率
+    upside_prob_element = soup.find('p', class_='metric-value', id='upside-prob')
+    if upside_prob_element:
+        upside_prob_element.string = upside_prob_str
+
+    # 更新波动率放大概率
+    vol_amp_prob_element = soup.find('p', class_='metric-value', id='vol-amp-prob')
+    if vol_amp_prob_element:
+        vol_amp_prob_element.string = vol_amp_prob_str
+
+    # 更新图片容器部分
+    container_list = soup.find('div', class_='container-list')
+    if container_list:
+        # 清空现有内容
+        container_list.clear()
+
+        # 添加新的图表容器
+        for img_file in img_files[:10]:  # 限制最多显示10张图片
+            chart_div = soup.new_tag('div', **{'class': 'chart-container'})
+            img_tag = soup.new_tag('img',
+                                   src=f'img/btc/{img_file.name}',
+                                   **{'class': 'chart-img'})
+            chart_div.append(img_tag)
+            container_list.append(chart_div)
+
+    # 写回文件
+    with open(html_path, 'w', encoding='utf-8') as f:
+        f.write(str(soup.prettify()))
+
+    print("HTML file updated successfully.")
 
 
 def main_task(model, symbol, interval):
