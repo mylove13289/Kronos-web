@@ -147,7 +147,7 @@ def create_plot(hist_df, close_preds_df, volume_preds_df):
     ax1.plot(pred_time, mean_preds, color='darkorange', linestyle='-', label='Mean Forecast')
     ax1.fill_between(pred_time, close_preds_df.min(axis=1), close_preds_df.max(axis=1), color='darkorange', alpha=0.2, label='Forecast Range (Min-Max)')
     # 生成一个当前时间的字符串，然后拼接进title
-    ax1.set_title(f'{Config["SYMBOL"]} Probabilistic Price & Volume Forecast (Next 15 minute) --- Build Time： {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}', fontsize=18, weight='bold')
+    ax1.set_title(f'{Config["SYMBOL"]} Probabilistic Price & Volume Forecast (Next 15 minute) - Build Time:{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}', fontsize=16, weight='bold')
     #ax1.set_title(f'{Config["SYMBOL"]} Probabilistic Price & Volume Forecast (Next 15 minute)', fontsize=14, weight='bold')
     ax1.set_ylabel('Price (USDT)')
     ax1.legend()
@@ -166,7 +166,7 @@ def create_plot(hist_df, close_preds_df, volume_preds_df):
         ax.tick_params(axis='x', rotation=30)
 
     fig.tight_layout()
-    chart_path = Config["REPO_PATH"] / 'img' / 'btc_prediction_chart_.png'
+    chart_path = Config["REPO_PATH"] / 'img/btc' / f'btc_prediction_chart_{datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}.png'
     fig.savefig(chart_path, dpi=120)
     plt.close(fig)
     print(f"Chart saved to: {chart_path}")
@@ -184,6 +184,15 @@ def update_html(upside_prob, vol_amp_prob):
     #now_utc_str = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
     upside_prob_str = f'{upside_prob:.1%}'
     vol_amp_prob_str = f'{vol_amp_prob:.1%}'
+
+    # 获取图片列表并按名称倒序排列
+    img_dir = Config["REPO_PATH"] / 'img/btc'
+    img_files = sorted(img_dir.glob('btc_prediction_chart_*.png'), reverse=True)
+
+    # 构建图片容器HTML
+    chart_containers_html = ""
+    for img_file in img_files[:10]:  # 限制最多显示10张图片
+        chart_containers_html += f'<div class="chart-container"><img src="img/btc/{img_file.name}" class="chart-img"></div>\n'
 
     with open(html_path, 'r', encoding='utf-8') as f:
         content = f.read()
@@ -203,6 +212,14 @@ def update_html(upside_prob, vol_amp_prob):
         r'(<p class="metric-value" id="vol-amp-prob">).*?(</p>)',
         lambda m: f'{m.group(1)}{vol_amp_prob_str}{m.group(2)}',
         content
+    )
+
+    # 更新图片容器部分
+    content = re.sub(
+        r'(<div class="container-list">).*?(</div>)',
+        lambda m: f'{m.group(1)}\n{chart_containers_html}{m.group(2)}',
+        content,
+        flags=re.DOTALL
     )
 
     with open(html_path, 'w', encoding='utf-8') as f:
