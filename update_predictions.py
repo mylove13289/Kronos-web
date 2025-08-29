@@ -221,7 +221,7 @@ def update_html(upside_prob, vol_amp_prob):
         container_list.clear()
 
         # 添加新的图表容器
-        for img_file in img_files[:10]:  # 限制最多显示10张图片
+        for img_file in img_files[:80]:  # 限制最多显示10张图片
             chart_div = soup.new_tag('div', **{'class': 'chart-container'})
             img_tag = soup.new_tag('img',
                                    src=f'img/btc/{img_file.name}',
