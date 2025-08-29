@@ -32,9 +32,7 @@ def load_model():
     """Loads the Kronos model and tokenizer."""
     print("Loading Kronos model...")
     tokenizer = KronosTokenizer.from_pretrained(Config["MODEL_PATH"] + "NeoQuasar/Kronos-Tokenizer-base")
-    print("success_load_tokenizer")
     model = Kronos.from_pretrained(Config["MODEL_PATH"] + "NeoQuasar/Kronos-base")
-    print("success_load_model")
     tokenizer.eval()
     model.eval()
     predictor = KronosPredictor(model, tokenizer, device="cpu", max_context=512)
@@ -249,14 +247,13 @@ def main_task(model, symbol, interval):
 def run_scheduler(model, symbol, interval):
     """A continuous scheduler that runs the main task hourly."""
     while True:
-        now = datetime.now(timezone.utc)
-        next_run_time = (now + timedelta(minutes=10)).replace(minute=0, second=5, microsecond=0)
-        sleep_seconds = (next_run_time - now).total_seconds()
+        now = datetime.now()
+        next_run_time = (now + timedelta(minutes=10))
 
-        if sleep_seconds > 0:
-            print(f"Current time: {now:%Y-%m-%d %H:%M:%S UTC}.")
-            print(f"Next run at: {next_run_time:%Y-%m-%d %H:%M:%S UTC}. Waiting for {sleep_seconds:.0f} seconds...")
-            time.sleep(sleep_seconds)
+        print(f"Current time: {now:%Y-%m-%d %H:%M:%S}.")
+        print(f"Next run at: {next_run_time:%Y-%m-%d %H:%M:%S}. Waiting for {600:.0f} seconds...")
+
+        time.sleep(600)
 
         try:
             main_task(model, symbol, interval)
