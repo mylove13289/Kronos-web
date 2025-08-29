@@ -194,6 +194,8 @@ def update_html(upside_prob, vol_amp_prob):
     for img_file in img_files[:10]:  # 限制最多显示10张图片
         chart_containers_html += f'<div class="chart-container"><img src="img/btc/{img_file.name}" class="chart-img"></div>\n'
 
+    print(chart_containers_html)
+
     with open(html_path, 'r', encoding='utf-8') as f:
         content = f.read()
 
