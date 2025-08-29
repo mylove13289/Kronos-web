@@ -23,7 +23,7 @@ from model import KronosTokenizer, Kronos, KronosPredictor
 Config = {
     "REPO_PATH": Path(__file__).parent.resolve(),
     "MODEL_PATH_local": "/Users/longquan/Documents/git/py/",
-    "MODEL_PATH": "/Users/longquan/Documents/git/py/",
+    "MODEL_PATH": "/home/admin/software/",
     "SYMBOL": 'x',
     "INTERVAL": 'x',
     "HIST_POINTS": 360,
