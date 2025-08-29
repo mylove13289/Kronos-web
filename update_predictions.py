@@ -11,27 +11,30 @@ import numpy as np
 import pandas as pd
 import torch
 from binance.client import Client
+import argparse
 
 from model import KronosTokenizer, Kronos, KronosPredictor
 
 # --- Configuration ---
 Config = {
     "REPO_PATH": Path(__file__).parent.resolve(),
-    "MODEL_PATH": "../Kronos_model",
-    "SYMBOL": 'BTCUSDT',
-    "INTERVAL": '1h',
+    "MODEL_PATH": "/Users/longquan/Documents/git/py/",
+    "SYMBOL": 'x',
+    "INTERVAL": 'x',
     "HIST_POINTS": 360,
-    "PRED_HORIZON": 24,
-    "N_PREDICTIONS": 30,
-    "VOL_WINDOW": 24,
+    "PRED_HORIZON": 3 * 15,
+    "N_PREDICTIONS": 10,
+    "VOL_WINDOW": 6*15,
 }
 
 
 def load_model():
     """Loads the Kronos model and tokenizer."""
     print("Loading Kronos model...")
-    tokenizer = KronosTokenizer.from_pretrained("NeoQuasar/Kronos-Tokenizer-base", cache_dir=Config["MODEL_PATH"])
-    model = Kronos.from_pretrained("NeoQuasar/Kronos-small", cache_dir=Config["MODEL_PATH"])
+    tokenizer = KronosTokenizer.from_pretrained(Config["MODEL_PATH"] + "NeoQuasar/Kronos-Tokenizer-base")
+    print("success_load_tokenizer")
+    model = Kronos.from_pretrained(Config["MODEL_PATH"] + "NeoQuasar/Kronos-base")
+    print("success_load_model")
     tokenizer.eval()
     model.eval()
     predictor = KronosPredictor(model, tokenizer, device="cpu", max_context=512)
@@ -46,7 +49,7 @@ def make_prediction(df, predictor):
     new_timestamps_index = pd.date_range(
         start=start_new_range,
         periods=Config["PRED_HORIZON"],
-        freq='H'
+        freq='h'
     )
     y_timestamp = pd.Series(new_timestamps_index, name='y_timestamp')
     x_timestamp = df['timestamps']
@@ -75,9 +78,8 @@ def make_prediction(df, predictor):
     return close_preds_main, volume_preds_main, close_preds_volatility
 
 
-def fetch_binance_data():
+def fetch_binance_data(symbol, interval):
     """Fetches K-line data from the Binance public API."""
-    symbol, interval = Config["SYMBOL"], Config["INTERVAL"]
     limit = Config["HIST_POINTS"] + Config["VOL_WINDOW"]
 
     print(f"Fetching {limit} bars of {symbol} {interval} data from Binance...")
@@ -146,7 +148,7 @@ def create_plot(hist_df, close_preds_df, volume_preds_df):
     mean_preds = close_preds_df.mean(axis=1)
     ax1.plot(pred_time, mean_preds, color='darkorange', linestyle='-', label='Mean Forecast')
     ax1.fill_between(pred_time, close_preds_df.min(axis=1), close_preds_df.max(axis=1), color='darkorange', alpha=0.2, label='Forecast Range (Min-Max)')
-    ax1.set_title(f'{Config["SYMBOL"]} Probabilistic Price & Volume Forecast (Next {Config["PRED_HORIZON"]} Hours)', fontsize=16, weight='bold')
+    ax1.set_title(f'{Config["SYMBOL"]} Probabilistic Price & Volume Forecast (Next 15 minute)', fontsize=16, weight='bold')
     ax1.set_ylabel('Price (USDT)')
     ax1.legend()
     ax1.grid(True, which='both', linestyle='--', linewidth=0.5)
@@ -164,7 +166,7 @@ def create_plot(hist_df, close_preds_df, volume_preds_df):
         ax.tick_params(axis='x', rotation=30)
 
     fig.tight_layout()
-    chart_path = Config["REPO_PATH"] / 'prediction_chart.png'
+    chart_path = Config["REPO_PATH"] / 'btc_prediction_chart.png'
     fig.savefig(chart_path, dpi=120)
     plt.close(fig)
     print(f"Chart saved to: {chart_path}")
@@ -172,12 +174,14 @@ def create_plot(hist_df, close_preds_df, volume_preds_df):
 
 def update_html(upside_prob, vol_amp_prob):
     """
-    Updates the index.html file with the latest metrics and timestamp.
+    Updates the btc_index.html file with the latest metrics and timestamp.
     This version uses a more robust lambda function for replacement to avoid formatting errors.
     """
-    print("Updating index.html...")
-    html_path = Config["REPO_PATH"] / 'index.html'
-    now_utc_str = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+    print("Updating btc_index.html...")
+    html_path = Config["REPO_PATH"] / 'btc_index.html'
+    now_beijing = datetime.now(timezone.utc) + timedelta(hours=8)
+    now_utc_str = now_beijing.strftime('%Y-%m-%d %H:%M:%S')
+    #now_utc_str = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
     upside_prob_str = f'{upside_prob:.1%}'
     vol_amp_prob_str = f'{vol_amp_prob:.1%}'
 
@@ -206,29 +210,16 @@ def update_html(upside_prob, vol_amp_prob):
     print("HTML file updated successfully.")
 
 
-def git_commit_and_push(commit_message):
-    """Adds, commits, and pushes specified files to the Git repository."""
-    print("Performing Git operations...")
-    try:
-        os.chdir(Config["REPO_PATH"])
-        subprocess.run(['git', 'add', 'prediction_chart.png', 'index.html'], check=True, capture_output=True, text=True)
-        commit_result = subprocess.run(['git', 'commit', '-m', commit_message], check=True, capture_output=True, text=True)
-        print(commit_result.stdout)
-        push_result = subprocess.run(['git', 'push'], check=True, capture_output=True, text=True)
-        print(push_result.stdout)
-        print("Git push successful.")
-    except subprocess.CalledProcessError as e:
-        output = e.stdout if e.stdout else e.stderr
-        if "nothing to commit" in output or "Your branch is up to date" in output:
-            print("No new changes to commit or push.")
-        else:
-            print(f"A Git error occurred:\n--- STDOUT ---\n{e.stdout}\n--- STDERR ---\n{e.stderr}")
 
-
-def main_task(model):
+def main_task(model, symbol, interval):
     """Executes one full update cycle."""
     print("\n" + "=" * 60 + f"\nStarting update task at {datetime.now(timezone.utc)}\n" + "=" * 60)
-    df_full = fetch_binance_data()
+
+    # Update Config with command line arguments if provided
+    Config["SYMBOL"] = symbol
+    Config["INTERVAL"] = interval
+
+    df_full = fetch_binance_data(symbol, interval)
     df_for_model = df_full.iloc[:-1]
 
     close_preds, volume_preds, v_close_preds = make_prediction(df_for_model, model)
@@ -259,7 +250,7 @@ def run_scheduler(model):
     """A continuous scheduler that runs the main task hourly."""
     while True:
         now = datetime.now(timezone.utc)
-        next_run_time = (now + timedelta(hours=1)).replace(minute=0, second=5, microsecond=0)
+        next_run_time = (now + timedelta(minutes=5)).replace(minute=0, second=5, microsecond=0)
         sleep_seconds = (next_run_time - now).total_seconds()
 
         if sleep_seconds > 0:
@@ -279,10 +270,44 @@ def run_scheduler(model):
             time.sleep(300)
 
 
+
+def git_commit_and_push(commit_message):
+    """Adds, commits, and pushes specified files to the Git repository."""
+    print("Performing Git operations...")
+    try:
+        os.chdir(Config["REPO_PATH"])
+        subprocess.run(['git', 'add', 'btc_prediction_chart.png', 'btc_index.html','update_predictions.py','run_prediction.sh'], check=True, capture_output=True, text=True)
+        commit_result = subprocess.run(['git', 'commit', '-m', commit_message], check=True, capture_output=True, text=True)
+        print(commit_result.stdout)
+        push_result = subprocess.run(['git', 'push'], check=True, capture_output=True, text=True)
+        print(push_result.stdout)
+        print("Git push successful.")
+    except subprocess.CalledProcessError as e:
+        output = e.stdout if e.stdout else e.stderr
+        if "nothing to commit" in output or "Your branch is up to date" in output:
+            print("No new changes to commit or push.")
+        else:
+            print(f"A Git error occurred:\n--- STDOUT ---\n{e.stdout}\n--- STDERR ---\n{e.stderr}")
+
+def parse_args():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description='Update predictions with custom symbol and interval')
+    parser.add_argument('--symbol', type=str ,default='BTCUSDT', help='Trading symbol (e.g., BTCUSDT, ETHUSDT)')
+    parser.add_argument('--interval', type=str ,default='15m', help='Kline interval (e.g., 15m, 1h, 4h)')
+    return parser.parse_args()
+
+
+
 if __name__ == '__main__':
-    model_path = Path(Config["MODEL_PATH"])
-    model_path.mkdir(parents=True, exist_ok=True)
+    #model_path = Path(Config["MODEL_PATH"])
+    #model_path.mkdir(parents=True, exist_ok=True)
+
+    #git_commit_and_push('test-commit')
+    args = parse_args()
+    # Use command line arguments if provided, otherwise use defaults
+    symbol = args.symbol
+    interval = args.interval
 
     loaded_model = load_model()
-    main_task(loaded_model)  # Run once on startup
+    main_task(loaded_model, symbol, interval)  # Run once on startu
     run_scheduler(loaded_model)  # Start the schedule
