@@ -192,7 +192,7 @@ def update_html(upside_prob, vol_amp_prob):
     # 构建图片容器HTML
     chart_containers_html = ""
     for img_file in img_files[:10]:  # 限制最多显示10张图片
-        chart_containers_html += f'                    <div class="chart-container"><img src="img/btc/{img_file.name}" class="chart-img"></div>\n'
+        chart_containers_html += f'<div class="chart-container"><img src="img/btc/{img_file.name}" class="chart-img"></div>\n'
 
     print(chart_containers_html)
 
@@ -219,9 +219,8 @@ def update_html(upside_prob, vol_amp_prob):
     # 更新图片容器部分 - 修正后的正则表达式
     content = re.sub(
         r'(<div class="container-list">)(.*?)(</div>)',
-        lambda m: f'{m.group(1)}\n{chart_containers_html}                {m.group(3)}',
-        content,
-        flags=re.DOTALL
+        lambda m: f'{m.group(1)}{chart_containers_html}{m.group(2)}',
+        content
     )
 
     with open(html_path, 'w', encoding='utf-8') as f:
