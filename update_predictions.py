@@ -246,11 +246,11 @@ def main_task(model, symbol, interval):
     print("-" * 60 + "\n--- Task completed successfully ---\n" + "-" * 60 + "\n")
 
 
-def run_scheduler(model):
+def run_scheduler(model, symbol, interval):
     """A continuous scheduler that runs the main task hourly."""
     while True:
         now = datetime.now(timezone.utc)
-        next_run_time = (now + timedelta(minutes=5)).replace(minute=0, second=5, microsecond=0)
+        next_run_time = (now + timedelta(minutes=10)).replace(minute=0, second=5, microsecond=0)
         sleep_seconds = (next_run_time - now).total_seconds()
 
         if sleep_seconds > 0:
@@ -259,7 +259,7 @@ def run_scheduler(model):
             time.sleep(sleep_seconds)
 
         try:
-            main_task(model)
+            main_task(model, symbol, interval)
         except Exception as e:
             print(f"\n!!!!!! A critical error occurred in the main task !!!!!!!")
             print(f"Error: {e}")
@@ -310,4 +310,4 @@ if __name__ == '__main__':
 
     loaded_model = load_model()
     main_task(loaded_model, symbol, interval)  # Run once on startu
-    run_scheduler(loaded_model)  # Start the schedule
+    run_scheduler(loaded_model,symbol, interval)  # Start the schedule
