@@ -146,7 +146,9 @@ def create_plot(hist_df, close_preds_df, volume_preds_df):
     mean_preds = close_preds_df.mean(axis=1)
     ax1.plot(pred_time, mean_preds, color='darkorange', linestyle='-', label='Mean Forecast')
     ax1.fill_between(pred_time, close_preds_df.min(axis=1), close_preds_df.max(axis=1), color='darkorange', alpha=0.2, label='Forecast Range (Min-Max)')
-    ax1.set_title(f'{Config["SYMBOL"]} Probabilistic Price & Volume Forecast (Next 15 minute)', fontsize=16, weight='bold')
+    # 生成一个当前时间的字符串，然后拼接进title
+    ax1.set_title(f'{Config["SYMBOL"]} Probabilistic Price & Volume Forecast (Next 15 minute) - {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}', fontsize=14, weight='bold')
+    #ax1.set_title(f'{Config["SYMBOL"]} Probabilistic Price & Volume Forecast (Next 15 minute)', fontsize=14, weight='bold')
     ax1.set_ylabel('Price (USDT)')
     ax1.legend()
     ax1.grid(True, which='both', linestyle='--', linewidth=0.5)
