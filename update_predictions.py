@@ -16,6 +16,9 @@ from bs4 import BeautifulSoup
 
 from model import KronosTokenizer, Kronos, KronosPredictor
 
+
+
+
 # --- Configuration ---
 Config = {
     "REPO_PATH": Path(__file__).parent.resolve(),
@@ -173,63 +176,7 @@ def create_plot(hist_df, close_preds_df, volume_preds_df):
     print(f"Chart saved to: {chart_path}")
 
 
-def _bak_update_html(upside_prob, vol_amp_prob):
-    """
-    Updates the btc_index.html file with the latest metrics and timestamp.
-    This version uses a more robust lambda function for replacement to avoid formatting errors.
-    """
-    print("Updating btc_index.html...")
-    html_path = Config["REPO_PATH"] / 'btc_index.html'
-    now_beijing = datetime.now(timezone.utc) + timedelta(hours=8)
-    now_utc_str = now_beijing.strftime('%Y-%m-%d %H:%M:%S')
-    #now_utc_str = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
-    upside_prob_str = f'{upside_prob:.1%}'
-    vol_amp_prob_str = f'{vol_amp_prob:.1%}'
 
-    # 获取图片列表并按名称倒序排列
-    img_dir = Config["REPO_PATH"] / 'img/btc'
-    img_files = sorted(img_dir.glob('btc_prediction_chart_*.png'), reverse=True)
-
-    # 构建图片容器HTML
-    chart_containers_html = ""
-    for img_file in img_files[:10]:  # 限制最多显示10张图片
-        chart_containers_html += f'<div class="chart-container"><img src="img/btc/{img_file.name}" class="chart-img"></div>\n'
-
-    print(chart_containers_html)
-
-    with open(html_path, 'r', encoding='utf-8') as f:
-        content = f.read()
-
-    # Robustly replace content using lambda functions
-    content = re.sub(
-        r'(<strong id="update-time">).*?(</strong>)',
-        lambda m: f'{m.group(1)}{now_utc_str}{m.group(2)}',
-        content
-    )
-    content = re.sub(
-        r'(<p class="metric-value" id="upside-prob">).*?(</p>)',
-        lambda m: f'{m.group(1)}{upside_prob_str}{m.group(2)}',
-        content
-    )
-    content = re.sub(
-        r'(<p class="metric-value" id="vol-amp-prob">).*?(</p>)',
-        lambda m: f'{m.group(1)}{vol_amp_prob_str}{m.group(2)}',
-        content
-    )
-
-    # 更新图片容器部分 - 修正后的正则表达式
-    content = re.sub(
-        r'(<div class="container-list">)(.*?)(</div>)',
-        lambda m: f'{m.group(1)}{chart_containers_html}{m.group(2)}',
-        content
-    )
-
-    with open(html_path, 'w', encoding='utf-8') as f:
-        f.write(content)
-    print("HTML file updated successfully.")
-
-
-from bs4 import BeautifulSoup
 
 
 def update_html(upside_prob, vol_amp_prob):
@@ -353,11 +300,11 @@ def git_commit_and_push(commit_message):
     print("Performing Git operations...")
     try:
         os.chdir(Config["REPO_PATH"])
-        subprocess.run(['git', 'add', 'btc_prediction_chart.png', 'btc_index.html','update_predictions.py','run_prediction.sh'], check=True, capture_output=True, text=True)
-        commit_result = subprocess.run(['git', 'commit', '-m', commit_message], check=True, capture_output=True, text=True)
-        print(commit_result.stdout)
-        push_result = subprocess.run(['git', 'push'], check=True, capture_output=True, text=True)
-        print(push_result.stdout)
+        subprocess.run(['git', 'add', 'btc_index.html'], check=True, capture_output=True, text=True)
+        # 添加 img/btc 目录下的所有文件
+        subprocess.run(['git', 'add', 'img/btc/'], check=True, capture_output=True, text=True)
+        subprocess.run(['git', 'commit', '-m', commit_message], check=True, capture_output=True, text=True)
+        subprocess.run(['git', 'push'], check=True, capture_output=True, text=True)
         print("Git push successful.")
     except subprocess.CalledProcessError as e:
         output = e.stdout if e.stdout else e.stderr
