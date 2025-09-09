@@ -291,8 +291,8 @@ def main_task(model):
 def run_scheduler(model):
     """A continuous scheduler that runs the main task hourly."""
     while True:
-        now = datetime.now(timezone.utc)
-        next_run_time = (now + timedelta(minutes=10)).replace(minute=0, second=5, microsecond=0)
+        now = datetime.now(timezone.utc)  + timedelta(hours=8)
+        next_run_time = now + timedelta(minutes=10)
         sleep_seconds = (next_run_time - now).total_seconds()
 
         if sleep_seconds > 0:
