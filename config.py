@@ -8,7 +8,7 @@ Config = {
     "SYMBOL": 'x',
     "INTERVAL": 'x',
     "HIST_POINTS": 360,
-    "PRED_HORIZON": 3 * 15,
-    "N_PREDICTIONS": 10,
-    "VOL_WINDOW": 6*15,
+    "PRED_HORIZON": 24,
+    "N_PREDICTIONS": 30,
+    "VOL_WINDOW": 24,
 }
