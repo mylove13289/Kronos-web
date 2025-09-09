@@ -169,7 +169,6 @@ def create_plot(hist_df, close_preds_df, volume_preds_df):
 
     symbol = Config["SYMBOL"]
     interval = Config["INTERVAL"]
-    #chart_path = Config["REPO_PATH"] / 'prediction_chart.png'
     chart_path = Config["REPO_PATH"] / f'img/{symbol}/{interval}' / f'prediction_chart_{datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}.png'
 
     fig.savefig(chart_path, dpi=120)
