@@ -244,7 +244,7 @@ def git_commit_and_push(commit_message):
     try:
         os.chdir(Config["REPO_PATH"])
         #git pull
-        subprocess.run(['git', 'pull'], check=True, capture_output=True, text=True)
+        #subprocess.run(['git', 'pull'], check=True, capture_output=True, text=True)
         subprocess.run(['git', 'add', f'{symbol}_index_{ interval}.html'], check=True, capture_output=True, text=True)
         # 添加 img/btc 目录下的所有文件
         subprocess.run(['git', 'add', f'img/{symbol}/{interval}'], check=True, capture_output=True, text=True)
@@ -292,7 +292,7 @@ def run_scheduler(model):
     """A continuous scheduler that runs the main task hourly."""
     while True:
         now = datetime.now(timezone.utc)  + timedelta(hours=8)
-        next_run_time = now + timedelta(minutes=10)
+        next_run_time = now + timedelta(minutes=45)
         sleep_seconds = (next_run_time - now).total_seconds()
 
         if sleep_seconds > 0:
