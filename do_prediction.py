@@ -1,8 +1,6 @@
 # do_prediction.py
 import pandas as pd
 import matplotlib.pyplot as plt
-from sqlalchemy import create_engine, text
-import pymysql
 import sys
 import os
 
@@ -11,11 +9,13 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # 或者添加项目根目录到Python路径
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
+import argparse
+
+from binance.client import Client
 
 from model import Kronos, KronosTokenizer, KronosPredictor
 import numpy as np
 import torch
-import argparse
 
 def plot_prediction(kline_df, pred_df):
     pred_df.index = kline_df.index[-pred_df.shape[0]:]
@@ -50,60 +50,7 @@ def plot_prediction(kline_df, pred_df):
     plt.show()
 
 
-def load_kline_data_from_db(db_config, symbol=None, iinterval=None, start_date=None, end_date=None):
-    """
-    从数据库查询K线数据
 
-    Parameters:
-    db_config (dict): 数据库连接配置
-    symbol (str): 交易对符号，如 'BTCUSDT'
-    start_date (str): 开始日期，格式 'YYYY-MM-DD'
-    end_date (str): 结束日期，格式 'YYYY-MM-DD'
-
-    Returns:
-    pandas.DataFrame: 查询到的数据
-    """
-    # 创建数据库连接引擎
-    engine = create_engine(
-        f"mysql+pymysql://{db_config['user']}:{db_config['password']}@"
-        f"{db_config['host']}:{db_config['port']}/{db_config['database']}"
-    )
-
-    # 构建SQL查询语句
-    query = "SELECT * FROM new_kline_data WHERE 1=1"
-    params = {}
-
-    if symbol:
-        query += " AND ts_code = :symbol"
-        params['symbol'] = symbol
-
-    if iinterval:
-        query += " AND iinterval = :iinterval"
-        params['iinterval'] = iinterval
-
-
-    if start_date:
-        query += " AND trade_date >= :start_date"
-        params['start_date'] = start_date
-
-    if end_date:
-        query += " AND trade_date <= :end_date"
-        params['end_date'] = end_date
-
-    query += " ORDER BY ts_code asc limit 288"
-
-    # 执行查询并返回DataFrame
-    df = pd.read_sql_query(text(query), engine, params=params)
-
-    return df
-
-
-# 使用示例
-# df = load_kline_data_from_db(DB_CONFIG, symbol='BTCUSDT', start_date='2023-01-01', end_date='2023-12-31')
-
-import argparse
-
-from binance.client import Client
 
 
 def fetch_binance_data(symbol, interval):
@@ -150,14 +97,13 @@ def main(symbol, iinterval , lookback , pred_len ):
         torch.cuda.manual_seed_all(42)
 
     # 1. Load Model and Tokenizer
-    tokenizer = KronosTokenizer.from_pretrained("/Users/longquan/Documents/git/py/NeoQuasar/Kronos-Tokenizer-base")
-    model = Kronos.from_pretrained("/Users/longquan/Documents/git/py/NeoQuasar/Kronos-base")
+    tokenizer = KronosTokenizer.from_pretrained("/Users/longquan/Documents/git_repository/myself/kronos/data/outputs/models/finetune_tokenizer_demo/checkpoints/best_model")
+    model = Kronos.from_pretrained("/Users/longquan/Documents/git_repository/myself/kronos/data/outputs/models/finetune_predictor_demo/checkpoints/best_model")
 
     # 2. Instantiate Predictor
-    predictor = KronosPredictor(model, tokenizer, device="cpu", max_context=512)
+    predictor = KronosPredictor(model, tokenizer, device="mps:0", max_context=512)
 
     # 3. Prepare Data
-    #df = load_kline_data_from_db(DB_CONFIG, symbol=symbol, iinterval=iinterval)
     df = fetch_binance_data(symbol=symbol, interval=iinterval)
 
     # 添加数据验证

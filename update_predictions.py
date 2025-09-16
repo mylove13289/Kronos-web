@@ -19,7 +19,7 @@ from model import KronosTokenizer, Kronos, KronosPredictor
 Config = {
     "REPO_PATH": Path(__file__).parent.resolve(),
     #"MODEL_PATH": "/Users/longquan/Documents/git/py/",
-    "MODEL_PATH" : "/Users/longquan/Documents/git/models/models/",
+    #"MODEL_PATH" : "/Users/longquan/Documents/git/models/models/",
     "SYMBOL": 'BTCUSDT',
     "INTERVAL": '1h',
     "HIST_POINTS": 360,
@@ -32,11 +32,11 @@ Config = {
 def load_model():
     """Loads the Kronos model and tokenizer."""
     print("Loading Kronos model...")
-    tokenizer = KronosTokenizer.from_pretrained("NeoQuasar/Kronos-Tokenizer-base", cache_dir=Config["MODEL_PATH"])
-    model = Kronos.from_pretrained("NeoQuasar/Kronos-base", cache_dir=Config["MODEL_PATH"])
+    tokenizer = KronosTokenizer.from_pretrained("/Users/longquan/Documents/git_repository/myself/kronos/data/outputs/models/finetune_tokenizer_demo/checkpoints/best_model")
+    model = Kronos.from_pretrained("/Users/longquan/Documents/git_repository/myself/kronos/data/outputs/models/finetune_predictor_demo/checkpoints/best_model")
     tokenizer.eval()
     model.eval()
-    predictor = KronosPredictor(model, tokenizer, device="cpu", max_context=512)
+    predictor = KronosPredictor(model, tokenizer, device="mps:0", max_context=512)
     print("Model loaded successfully.")
     return predictor
 
@@ -274,7 +274,7 @@ def main_task(model):
     update_html(upside_prob, vol_amp_prob)
 
     commit_message = f"Auto-update forecast for {datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC"
-    git_commit_and_push(commit_message)
+    #git_commit_and_push(commit_message)
 
     # --- 新增的内存清理步骤 ---
     # 显式删除大的DataFrame对象，帮助垃圾回收器
@@ -323,9 +323,6 @@ def parse_args():
 
 
 if __name__ == '__main__':
-    model_path = Path(Config["MODEL_PATH"])
-    model_path.mkdir(parents=True, exist_ok=True)
-
     args = parse_args()
     # Use command line arguments if provided, otherwise use defaults
     symbol = args.symbol
