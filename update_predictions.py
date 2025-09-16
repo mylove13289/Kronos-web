@@ -21,7 +21,7 @@ Config = {
     #"MODEL_PATH": "/Users/longquan/Documents/git/py/",
     #"MODEL_PATH" : "/Users/longquan/Documents/git/models/models/",
     "SYMBOL": 'BTCUSDT',
-    "INTERVAL": '1h',
+    "INTERVAL": 'x',
     "HIST_POINTS": 360,
     "PRED_HORIZON": 24,
     "N_PREDICTIONS": 30,
@@ -140,6 +140,9 @@ def create_plot(hist_df, close_preds_df, volume_preds_df):
         gridspec_kw={'height_ratios': [3, 1]}
     )
 
+    current_time_beijing = datetime.now(timezone.utc) + timedelta(hours=8)
+    current_time_str = current_time_beijing.strftime('%Y-%m-%d %H:%M:%S')
+
     hist_time = hist_df['timestamps']
     last_hist_time = hist_time.iloc[-1]
     pred_time = pd.to_datetime([last_hist_time + timedelta(hours=i + 1) for i in range(len(close_preds_df))])
@@ -148,7 +151,9 @@ def create_plot(hist_df, close_preds_df, volume_preds_df):
     mean_preds = close_preds_df.mean(axis=1)
     ax1.plot(pred_time, mean_preds, color='darkorange', linestyle='-', label='Mean Forecast')
     ax1.fill_between(pred_time, close_preds_df.min(axis=1), close_preds_df.max(axis=1), color='darkorange', alpha=0.2, label='Forecast Range (Min-Max)')
-    ax1.set_title(f'{Config["SYMBOL"]} Probabilistic Price & Volume Forecast (Next {Config["PRED_HORIZON"]} Hours)', fontsize=16, weight='bold')
+    ax1.set_title(
+        f'{Config["SYMBOL"]} Probabilistic Price & Volume Forecast (Next 6 Hours)\nGenerated at: {current_time_str}',
+        fontsize=16, weight='bold')
     ax1.set_ylabel('Price (USDT)')
     ax1.legend()
     ax1.grid(True, which='both', linestyle='--', linewidth=0.5)
