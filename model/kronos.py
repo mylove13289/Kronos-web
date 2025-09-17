@@ -453,7 +453,7 @@ def calc_time_stamps(x_timestamp):
 
 class KronosPredictor:
 
-    def __init__(self, model, tokenizer, device="cuda:0", max_context=512, clip=5):
+    def __init__(self, model, tokenizer, device, max_context=512, clip=5):
         self.tokenizer = tokenizer
         self.model = model
         self.max_context = max_context

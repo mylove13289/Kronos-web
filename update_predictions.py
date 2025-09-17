@@ -22,9 +22,9 @@ Config = {
     #"MODEL_PATH" : "/Users/longquan/Documents/git/models/models/",
     "SYMBOL": 'BTCUSDT',
     "INTERVAL": 'x',
-    "HIST_POINTS": 360,
+    "HIST_POINTS": 180,
     "PRED_HORIZON": 24,
-    "N_PREDICTIONS": 30,
+    "N_PREDICTIONS": 8,
     "VOL_WINDOW": 24,
 }
 
@@ -59,7 +59,7 @@ def make_prediction(df, predictor):
         begin_time = time.time()
         close_preds_main, volume_preds_main = predictor.predict(
             df=x_df, x_timestamp=x_timestamp, y_timestamp=y_timestamp,
-            pred_len=Config["PRED_HORIZON"], T=1.0, top_p=0.95,
+            pred_len=Config["PRED_HORIZON"], T=0.75, top_p=0.92,
             sample_count=Config["N_PREDICTIONS"], verbose=True
         )
         print(f"Main prediction completed in {time.time() - begin_time:.2f} seconds.")
@@ -279,7 +279,7 @@ def main_task(model):
     update_html(upside_prob, vol_amp_prob)
 
     commit_message = f"Auto-update forecast for {datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC"
-    #git_commit_and_push(commit_message)
+    git_commit_and_push(commit_message)
 
     # --- 新增的内存清理步骤 ---
     # 显式删除大的DataFrame对象，帮助垃圾回收器
@@ -297,7 +297,7 @@ def run_scheduler(model):
     """A continuous scheduler that runs the main task hourly."""
     while True:
         now = datetime.now(timezone.utc)  + timedelta(hours=8)
-        next_run_time = now + timedelta(minutes=45)
+        next_run_time = now + timedelta(minutes=10)
         sleep_seconds = (next_run_time - now).total_seconds()
 
         if sleep_seconds > 0:
