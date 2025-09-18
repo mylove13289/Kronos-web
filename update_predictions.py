@@ -77,14 +77,14 @@ def make_prediction(df, predictor):
     return close_preds_main, volume_preds_main, close_preds_volatility
 
 
-def fetch_binance_data():
+def fetch_binance_data(endTime):
     """Fetches K-line data from the Binance public API."""
     symbol, interval = Config["SYMBOL"], Config["INTERVAL"]
     limit = Config["HIST_POINTS"] + Config["VOL_WINDOW"]
 
     print(f"Fetching {limit} bars of {symbol} {interval} data from Binance...")
     client = Client()
-    klines = client.get_klines(symbol=symbol, interval=interval, limit=limit)
+    klines = client.get_klines(symbol=symbol, interval=interval, limit=limit,endTime=endTime)
 
     cols = ['open_time', 'open', 'high', 'low', 'close', 'volume', 'close_time',
             'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume',
@@ -94,7 +94,8 @@ def fetch_binance_data():
     df = df[['open_time', 'open', 'high', 'low', 'close', 'volume', 'quote_asset_volume']]
     df.rename(columns={'quote_asset_volume': 'amount', 'open_time': 'timestamps'}, inplace=True)
 
-    df['timestamps'] = pd.to_datetime(df['timestamps'], unit='ms')
+    #df['timestamps'] = pd.to_datetime(df['timestamps'], unit='ms')
+    df['timestamps'] = pd.to_datetime(df['timestamps'], unit='ms', utc=True).dt.tz_convert('Asia/Shanghai')
     for col in ['open', 'high', 'low', 'close', 'volume', 'amount']:
         df[col] = pd.to_numeric(df[col])
 
@@ -161,7 +162,7 @@ def create_plot(hist_df, close_preds_df, volume_preds_df):
     ax2.bar(hist_time, hist_df['volume'], color='skyblue', label='Historical Volume', width=0.03)
     ax2.bar(pred_time, volume_preds_df.mean(axis=1), color='sandybrown', label='Mean Forecasted Volume', width=0.03)
     ax2.set_ylabel('Volume')
-    ax2.set_xlabel('Time (UTC)')
+    ax2.set_xlabel('Time (UTC+8)')
     ax2.legend()
     ax2.grid(True, which='both', linestyle='--', linewidth=0.5)
 
@@ -263,10 +264,10 @@ def git_commit_and_push(commit_message):
         else:
             print(f"A Git error occurred:\n--- STDOUT ---\n{e.stdout}\n--- STDERR ---\n{e.stderr}")
 
-def main_task(model):
+def main_task(model, endTime):
     """Executes one full update cycle."""
     print("\n" + "=" * 60 + f"\nStarting update task at {datetime.now(timezone.utc)}\n" + "=" * 60)
-    df_full = fetch_binance_data()
+    df_full = fetch_binance_data(endTime)
     df_for_model = df_full.iloc[:-1]
 
     close_preds, volume_preds, v_close_preds = make_prediction(df_for_model, model)
@@ -297,7 +298,7 @@ def run_scheduler(model):
     """A continuous scheduler that runs the main task hourly."""
     while True:
         now = datetime.now(timezone.utc)  + timedelta(hours=8)
-        next_run_time = now + timedelta(minutes=10)
+        next_run_time = now + timedelta(minutes=15)
         sleep_seconds = (next_run_time - now).total_seconds()
 
         if sleep_seconds > 0:
@@ -322,6 +323,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Update predictions with custom symbol and interval')
     parser.add_argument('--symbol', type=str ,default='BTCUSDT', help='Trading symbol (e.g., BTCUSDT, ETHUSDT)')
     parser.add_argument('--interval', type=str ,default='15m', help='Kline interval (e.g., 15m, 1h, 4h)')
+    parser.add_argument('--step', type=str ,default='0', help='步长')
     return parser.parse_args()
 
 
@@ -332,11 +334,20 @@ if __name__ == '__main__':
     # Use command line arguments if provided, otherwise use defaults
     symbol = args.symbol
     interval = args.interval
+    step = int(args.step)  # 获取步长参数并转换为整数
 
     # Update Config with command line arguments if provided
     Config["SYMBOL"] = symbol
     Config["INTERVAL"] = interval
 
+    endTimeBaseTime = '2025-09-10 00:00:00'
+
+    endTimeBase = datetime.strptime(endTimeBaseTime, '%Y-%m-%d %H:%M:%S')
+    endTime = int((endTimeBase + timedelta(minutes=step * 15)).timestamp() * 1000)
+
+    print(
+        f"Using symbol: {symbol}, interval: {interval}, step: {step}, endTime: {datetime.fromtimestamp(endTime / 1000).strftime('%Y-%m-%d %H:%M:%S')}")
+
     loaded_model = load_model()
-    main_task(loaded_model)  # Run once on startup
+    main_task(loaded_model,endTime)  # Run once on startup
     run_scheduler(loaded_model)  # Start the schedule
