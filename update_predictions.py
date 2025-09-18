@@ -340,10 +340,12 @@ if __name__ == '__main__':
     Config["SYMBOL"] = symbol
     Config["INTERVAL"] = interval
 
-    endTimeBaseTime = '2025-09-10 00:00:00'
+    #endTimeBaseTime = '2025-09-10 00:00:00'
 
-    endTimeBase = datetime.strptime(endTimeBaseTime, '%Y-%m-%d %H:%M:%S')
-    endTime = int((endTimeBase + timedelta(minutes=step * 15)).timestamp() * 1000)
+    #endTimeBase = datetime.strptime(endTimeBaseTime, '%Y-%m-%d %H:%M:%S')
+    #endTime = int((endTimeBase + timedelta(minutes=step * 15)).timestamp() * 1000)
+
+    endTime = int(time.time() * 1000)
 
     print(
         f"Using symbol: {symbol}, interval: {interval}, step: {step}, endTime: {datetime.fromtimestamp(endTime / 1000).strftime('%Y-%m-%d %H:%M:%S')}")
